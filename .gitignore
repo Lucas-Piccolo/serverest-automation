@@ -1,0 +1,10 @@
+node_modules/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+
+# Environment files
+.env
+.env.*
+!.env.example
