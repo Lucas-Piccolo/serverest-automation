@@ -1,0 +1,118 @@
+describe('API - Carrinhos', () => {
+  const createAdminUserAndToken = () => {
+    const adminUser = {
+      nome: `Carrinho Admin ${Date.now()}`,
+      email: `admin_carrinho_${Date.now()}@qa.com`,
+      password: '123456',
+      administrador: 'true',
+    };
+
+    return cy.apiPost('/usuarios', adminUser).then((userResponse) => {
+      expect(userResponse.status).to.eq(201);
+      expect(userResponse.body).to.have.property('message', 'Cadastro realizado com sucesso');
+      expect(userResponse.body).to.have.property('_id');
+
+      const userId = userResponse.body._id;
+
+      return cy.loginApi(adminUser.email, adminUser.password).then((token) => ({
+        userId,
+        token,
+      }));
+    });
+  };
+
+  const createProduct = (token) => {
+    const product = {
+      nome: `Produto Carrinho ${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      preco: 150,
+      descricao: 'Produto para carrinho',
+      quantidade: 10,
+    };
+
+    return cy.createProductApi(product, token).then((productResponse) => {
+      expect(productResponse.status).to.eq(201);
+      expect(productResponse.body).to.have.property('message', 'Cadastro realizado com sucesso');
+      expect(productResponse.body).to.have.property('_id');
+
+      return productResponse.body._id;
+    });
+  };
+
+  const createCart = (token, productId) => {
+    const payload = {
+      produtos: [{ idProduto: productId, quantidade: 1 }],
+    };
+
+    return cy.createCartApi(payload, token).then((cartResponse) => {
+      expect(cartResponse.status).to.eq(201);
+      expect(cartResponse.body).to.have.property('message', 'Cadastro realizado com sucesso');
+      expect(cartResponse.body).to.have.property('_id');
+
+      return cartResponse.body._id;
+    });
+  };
+
+  const getCartByUserId = (userId) => {
+    return cy.apiGet('/carrinhos').then((response) => {
+      expect(response.status).to.eq(200);
+      expect(response.body).to.have.property('carrinhos');
+
+      const carts = response.body.carrinhos || [];
+      const cartFound = carts.find((item) => item.idUsuario === userId || item.usuarioId === userId);
+      expect(cartFound, 'Carrinho do usuário não encontrado na listagem').to.not.be.undefined;
+
+      return cartFound._id;
+    });
+  };
+
+  const validateDeletedCart = (cartId) => {
+    cy.request({
+      method: 'GET',
+      url: `https://serverest.dev/carrinhos/${cartId}`,
+      failOnStatusCode: false,
+    }).then((response) => {
+      expect(response.status).to.eq(400);
+      expect(response.body).to.have.property('message');
+      expect(response.body.message).to.match(/(não encontrado|Nenhum registro encontrado)/i);
+    });
+  };
+
+  it('Cenário 1 - deve concluir carrinho com usuário admin e validar remoção', () => {
+    createAdminUserAndToken().then(({ userId, token }) => {
+      createProduct(token).then((productId) => {
+        createCart(token, productId).then((createdCartId) => {
+          getCartByUserId(userId).then((cartIdFromList) => {
+            expect(cartIdFromList).to.eq(createdCartId);
+
+            cy.apiDelete('/carrinhos/concluir-compra', token).then((deleteResponse) => {
+              expect(deleteResponse.status).to.eq(200);
+              expect(deleteResponse.body).to.have.property('message', 'Registro excluído com sucesso');
+
+              validateDeletedCart(createdCartId);
+            });
+          });
+        });
+      });
+    });
+  });
+
+  it('Cenário 2 - deve cancelar carrinho com usuário admin e validar remoção', () => {
+    createAdminUserAndToken().then(({ userId, token }) => {
+      createProduct(token).then((productId) => {
+        createCart(token, productId).then((createdCartId) => {
+          getCartByUserId(userId).then((cartIdFromList) => {
+            expect(cartIdFromList).to.eq(createdCartId);
+
+            cy.apiDelete('/carrinhos/cancelar-compra', token).then((deleteResponse) => {
+              expect(deleteResponse.status).to.eq(200);
+              expect(deleteResponse.body).to.have.property('message');
+              expect(deleteResponse.body.message).to.include('Registro excluído com sucesso');
+
+              validateDeletedCart(createdCartId);
+            });
+          });
+        });
+      });
+    });
+  });
+});
