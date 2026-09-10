@@ -1,5 +1,6 @@
 describe('API - Carrinhos', () => {
   const createAdminUserAndToken = () => {
+    // Cria um usuário admin para poder realizar as ações do carrinho com autenticação.
     const adminUser = {
       nome: `Carrinho Admin ${Date.now()}`,
       email: `admin_carrinho_${Date.now()}@qa.com`,
@@ -14,6 +15,7 @@ describe('API - Carrinhos', () => {
 
       const userId = userResponse.body._id;
 
+      // Realiza o login para obter o token usado nas rotas autenticadas.
       return cy.loginApi(adminUser.email, adminUser.password).then((token) => ({
         userId,
         token,
@@ -22,6 +24,7 @@ describe('API - Carrinhos', () => {
   };
 
   const createProduct = (token) => {
+    // Cria um novo produto para associar ao carrinho no payload da rota de carrinhos.
     const product = {
       nome: `Produto Carrinho ${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       preco: 150,
@@ -39,6 +42,7 @@ describe('API - Carrinhos', () => {
   };
 
   const createCart = (token, productId) => {
+    // Cria um novo carrinho com o produto gerado e quantidade 1.
     const payload = {
       produtos: [{ idProduto: productId, quantidade: 1 }],
     };
@@ -53,6 +57,7 @@ describe('API - Carrinhos', () => {
   };
 
   const getCartByUserId = (userId) => {
+    // Consulta os carrinhos e localiza o ID do carrinho gerado para este usuário.
     return cy.apiGet('/carrinhos').then((response) => {
       expect(response.status).to.eq(200);
       expect(response.body).to.have.property('carrinhos');
@@ -66,6 +71,7 @@ describe('API - Carrinhos', () => {
   };
 
   const validateDeletedCart = (cartId) => {
+    // Valida que o carrinho foi removido e não pode mais ser consultado por ID.
     cy.request({
       method: 'GET',
       url: `https://serverest.dev/carrinhos/${cartId}`,
@@ -84,6 +90,7 @@ describe('API - Carrinhos', () => {
           getCartByUserId(userId).then((cartIdFromList) => {
             expect(cartIdFromList).to.eq(createdCartId);
 
+            // Consulta o carrinho e conclui a compra com o token do usuário admin.
             cy.apiDelete('/carrinhos/concluir-compra', token).then((deleteResponse) => {
               expect(deleteResponse.status).to.eq(200);
               expect(deleteResponse.body).to.have.property('message', 'Registro excluído com sucesso');
@@ -103,6 +110,7 @@ describe('API - Carrinhos', () => {
           getCartByUserId(userId).then((cartIdFromList) => {
             expect(cartIdFromList).to.eq(createdCartId);
 
+            // Consulta o carrinho e cancela a compra com o token do usuário admin.
             cy.apiDelete('/carrinhos/cancelar-compra', token).then((deleteResponse) => {
               expect(deleteResponse.status).to.eq(200);
               expect(deleteResponse.body).to.have.property('message');

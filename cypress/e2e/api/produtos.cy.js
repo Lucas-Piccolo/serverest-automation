@@ -9,6 +9,7 @@ describe('API - Produtos', () => {
   };
 
   beforeEach(() => {
+    // Cria um usuário admin para ganhar acesso às rotas protegidas de produto e realiza o login.
     cy.apiPost('/usuarios', adminUser).then((userResponse) => {
       expect(userResponse.status).to.eq(201);
       expect(userResponse.body).to.have.property('message', 'Cadastro realizado com sucesso');
@@ -20,6 +21,7 @@ describe('API - Produtos', () => {
   });
 
   it('deve realizar o fluxo completo de CRUD do produto', () => {
+    // Cria um novo produto com dados válidos para validar a criação.
     const productName = `Produto API ${Date.now()}`;
     const product = {
       nome: productName,
@@ -35,6 +37,7 @@ describe('API - Produtos', () => {
 
       const productIdFromCreate = createResponse.body._id;
 
+      // Busca o produto por nome para obter o ID e confirmar que ele foi persistido.
       cy.apiGet(`/produtos?nome=${encodeURIComponent(productName)}`).then((listResponse) => {
         expect(listResponse.status).to.eq(200);
         expect(listResponse.body).to.have.property('produtos');
@@ -45,6 +48,7 @@ describe('API - Produtos', () => {
         const productId = productFound._id;
         expect(productId).to.eq(productIdFromCreate);
 
+        // Consulta os detalhes do produto para validar o conteúdo retornado.
         cy.apiGet(`/produtos/${productId}`).then((detailsResponse) => {
           expect(detailsResponse.status).to.eq(200);
           expect(detailsResponse.body).to.have.property('_id', productId);
@@ -53,6 +57,7 @@ describe('API - Produtos', () => {
           expect(detailsResponse.body).to.have.property('descricao', product.descricao);
         });
 
+        // Atualiza o nome do produto para validar a alteração do registro.
         const updatedName = `${productName}01`;
 
         cy.apiPut(`/produtos/${productId}`, {
@@ -64,10 +69,12 @@ describe('API - Produtos', () => {
           expect(updateResponse.status).to.eq(200);
           expect(updateResponse.body).to.have.property('message', 'Registro alterado com sucesso');
 
+          // Exclui o produto e confirma que a operação foi concluída.
           cy.apiDelete(`/produtos/${productId}`, token).then((deleteResponse) => {
             expect(deleteResponse.status).to.eq(200);
             expect(deleteResponse.body).to.have.property('message', 'Registro excluído com sucesso');
 
+            // Verifica que o produto não existe mais após a remoção.
             cy.request({
               method: 'GET',
               url: `https://serverest.dev/produtos/${productId}`,
