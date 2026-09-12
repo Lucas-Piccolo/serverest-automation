@@ -6,10 +6,12 @@ Cypress.Commands.add('login', (email, password) => {
     cy.contains('button', 'Entrar').click();
     cy.url().should('include', '/home');
   });
+  cy.visit('/home');
 });
 
 Cypress.Commands.add('cadastroUsuario', (nome, email, senha, isAdmin = false) => {
   cy.visit('/cadastrarusuarios');
+  cy.intercept('POST', '**/usuarios').as('createUserForLogin');
   cy.get('input[placeholder="Digite seu nome"]').clear().type(nome);
   cy.get('input[placeholder="Digite seu email"]').clear().type(email);
   cy.get('input[placeholder="Digite sua senha"]').clear().type(senha);
@@ -19,4 +21,5 @@ Cypress.Commands.add('cadastroUsuario', (nome, email, senha, isAdmin = false) =>
   }
 
   cy.contains('button', 'Cadastrar').click();
+  cy.wait('@createUserForLogin').its('response.statusCode').should('eq', 201);
 });

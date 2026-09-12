@@ -1,18 +1,12 @@
+const DataUtils = require('../support/data-utils');
+
 describe('Fluxo de compra', () => {
   beforeEach(() => {
     // Cria um usuário para realizar login e acessar o fluxo autenticado de compra.
-    const nome = `Carrinho Usuario ${Date.now()}`;
-    const email = `carrinho_${Date.now()}@qa.com`;
-    const senha = '123456';
+    const user = DataUtils.webUser('Carrinho Usuario');
 
-    cy.cadastroUsuario(nome, email, senha, false);
-
-    // Realiza o login antes de interagir com os produtos.
-    cy.visit('/login');
-    cy.get('input[placeholder="Digite seu email"]').type(email);
-    cy.get('input[placeholder="Digite sua senha"]').type(senha);
-    cy.contains('button', 'Entrar').click();
-    cy.url().should('include', '/home');
+    cy.cadastroUsuario(user.nome, user.email, user.senha, user.isAdmin);
+    cy.login(user.email, user.senha);
   });
 
   it('deve adicionar um produto da lista ao carrinho e validar a tela de carrinho', () => {

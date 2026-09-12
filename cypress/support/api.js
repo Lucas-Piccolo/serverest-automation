@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://serverest.dev';
+const API_BASE_URL = Cypress.config('apiBaseUrl');
 
 const api = {
   get(path) {

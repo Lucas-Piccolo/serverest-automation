@@ -1,12 +1,9 @@
+const DataUtils = require('../../support/data-utils');
+
 describe('API - Carrinhos', () => {
   const createAdminUserAndToken = () => {
     // Cria um usuário admin para poder realizar as ações do carrinho com autenticação.
-    const adminUser = {
-      nome: `Carrinho Admin ${Date.now()}`,
-      email: `admin_carrinho_${Date.now()}@qa.com`,
-      password: '123456',
-      administrador: 'true',
-    };
+    const adminUser = DataUtils.apiUser('Carrinho Admin', true);
 
     return cy.apiPost('/usuarios', adminUser).then((userResponse) => {
       expect(userResponse.status).to.eq(201);
@@ -25,12 +22,7 @@ describe('API - Carrinhos', () => {
 
   const createProduct = (token) => {
     // Cria um novo produto para associar ao carrinho no payload da rota de carrinhos.
-    const product = {
-      nome: `Produto Carrinho ${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      preco: 150,
-      descricao: 'Produto para carrinho',
-      quantidade: 10,
-    };
+    const product = DataUtils.cartProduct();
 
     return cy.createProductApi(product, token).then((productResponse) => {
       expect(productResponse.status).to.eq(201);
@@ -43,9 +35,7 @@ describe('API - Carrinhos', () => {
 
   const createCart = (token, productId) => {
     // Cria um novo carrinho com o produto gerado e quantidade 1.
-    const payload = {
-      produtos: [{ idProduto: productId, quantidade: 1 }],
-    };
+    const payload = DataUtils.cartPayload(productId);
 
     return cy.createCartApi(payload, token).then((cartResponse) => {
       expect(cartResponse.status).to.eq(201);
@@ -74,7 +64,7 @@ describe('API - Carrinhos', () => {
     // Valida que o carrinho foi removido e não pode mais ser consultado por ID.
     cy.request({
       method: 'GET',
-      url: `https://serverest.dev/carrinhos/${cartId}`,
+      url: `${Cypress.config('apiBaseUrl')}/carrinhos/${cartId}`,
       failOnStatusCode: false,
     }).then((response) => {
       expect(response.status).to.eq(400);

@@ -1,9 +1,10 @@
+const DataUtils = require('../../support/data-utils');
+
 describe('API - Usuários', () => {
   it('deve realizar o fluxo completo de CRUD do usuário', () => {
     // Cria um usuário para validar a criação e os próximos passos do fluxo.
-    const name = `Usuário API ${Date.now()}`;
-    const email = `usuario_api_${Date.now()}@qa.com`;
-    const password = '123456';
+    const userData = DataUtils.apiUser('Usuário API');
+    const { nome: name, email, password } = userData;
     const user = {
       nome: name,
       email,
@@ -37,7 +38,7 @@ describe('API - Usuários', () => {
       });
 
       // Atualiza o nome do usuário para validar a edição do registro.
-      const updatedName = `${name}01`;
+      const updatedName = DataUtils.updatedUserName(name);
 
       cy.apiPut(`/usuarios/${userId}`, {
         nome: updatedName,

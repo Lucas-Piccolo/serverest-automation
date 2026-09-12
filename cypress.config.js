@@ -3,6 +3,7 @@ const { defineConfig } = require("cypress");
 module.exports = defineConfig({
   e2e: {
     baseUrl: "https://front.serverest.dev",
+    apiBaseUrl: "https://serverest.dev",
     specPattern: "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",
     supportFile: "cypress/support/e2e.js",
     viewportWidth: 1280,
@@ -13,8 +14,5 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {
       return config;
     },
-  },
-  env: {
-    apiBaseUrl: "https://serverest.dev",
   },
 });

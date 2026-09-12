@@ -1,12 +1,9 @@
+const DataUtils = require('../../support/data-utils');
+
 describe('API - Produtos', () => {
   let token;
 
-  const adminUser = {
-    nome: `Admin Produto ${Date.now()}`,
-    email: `admin_produto_${Date.now()}@qa.com`,
-    password: '123456',
-    administrador: 'true',
-  };
+  const adminUser = DataUtils.apiUser('Admin Produto', true);
 
   beforeEach(() => {
     // Cria um usuário admin para ganhar acesso às rotas protegidas de produto e realiza o login.
@@ -22,13 +19,8 @@ describe('API - Produtos', () => {
 
   it('deve realizar o fluxo completo de CRUD do produto', () => {
     // Cria um novo produto com dados válidos para validar a criação.
-    const productName = `Produto API ${Date.now()}`;
-    const product = {
-      nome: productName,
-      preco: 100,
-      descricao: 'Produto de teste Cypress',
-      quantidade: 10,
-    };
+    const product = DataUtils.product();
+    const productName = product.nome;
 
     cy.createProductApi(product, token).then((createResponse) => {
       expect(createResponse.status).to.eq(201);
@@ -58,14 +50,9 @@ describe('API - Produtos', () => {
         });
 
         // Atualiza o nome do produto para validar a alteração do registro.
-        const updatedName = `${productName}01`;
+        const updatedProduct = DataUtils.updatedProduct(productName);
 
-        cy.apiPut(`/produtos/${productId}`, {
-          nome: updatedName,
-          preco: 200,
-          descricao: 'Produto editado por Cypress',
-          quantidade: 7,
-        }, token).then((updateResponse) => {
+        cy.apiPut(`/produtos/${productId}`, updatedProduct, token).then((updateResponse) => {
           expect(updateResponse.status).to.eq(200);
           expect(updateResponse.body).to.have.property('message', 'Registro alterado com sucesso');
 
@@ -77,7 +64,7 @@ describe('API - Produtos', () => {
             // Verifica que o produto não existe mais após a remoção.
             cy.request({
               method: 'GET',
-              url: `https://serverest.dev/produtos/${productId}`,
+              url: `${Cypress.config('apiBaseUrl')}/produtos/${productId}`,
               failOnStatusCode: false,
             }).then((deletedResponse) => {
               expect(deletedResponse.status).to.eq(400);
